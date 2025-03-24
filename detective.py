@@ -4,7 +4,31 @@ import json
 from concurrent.futures import ThreadPoolExecutor
 
 # List of required tools
-required_tools = ["go", "subfinder", "assetfinder", "sublist3r", "findomain", "httpx"]
+required_tools = ["go", "subfinder", "assetfinder", "sublist3r", "httpx"]
+
+# Check each tool and print its status
+missing_tools = []
+
+# If Go is missing, ask user before installing
+if "go" in missing_tools:
+    install_go()
+    missing_tools.remove("go") 
+
+if "sublist3r" in missing_tools:
+    install_sublist3r()
+    missing_tools.remove("sublist3r") 
+
+if "assetfinder" in missing_tools:
+    install_assetfinder()
+    missing_tools.remove("assetfinder")
+
+if "subfinder" in missing_tools:
+    install_subfinder()
+    missing_tools.remove("subfinder")
+
+if "httpx" in missing_tools:
+    install_httpx()
+    missing_tools.remove("httpx")
 
 art = """
                                      @@@@@@@                               
@@ -78,13 +102,13 @@ def install_go():
         print("[✓] Installation file removed.")
 
         # Add Go to PATH
-        with open(os.path.expanduser("~/.zshrc"), "a") as file:
+        with open(os.path.expanduser("~/.bashrc"), "a") as file:
             file.write('\nexport PATH=$PATH:/usr/local/go/bin\n')
             file.write('\nexport PATH=$PATH:$HOME/go/bin\n')
-        print("[✓] Go path added to ~/.zshrc.")
+        print("[✓] Go path added to ~/.bashrc")
 
         # Apply changes
-        print("[!] Restart your terminal or run `source ~/.zshrc` to apply the changes.")
+        print("[!] Restart your terminal or run `source ~/.bashrc` to apply the changes.")
         print("[✓] Go installation completed successfully!")
 
     except Exception as e:
@@ -111,6 +135,10 @@ def install_sublist3r():
             # Change to the sublist3r directory
             os.chdir(os.path.expanduser("~/Desktop/Sublist3r"))
             print(f"[✓] Changed directory to {os.getcwd()}")
+
+            # Install pip3
+            subprocess.run(["sudo" ,"apt" ,"install" ,"python3-pip" ,"-y"], check=True)
+            print("[✓] Dependencies installed successfully.")
 
             # Install the required dependencies
             subprocess.run(["sudo", "pip3", "install", "-r", "requirements.txt", "--break-system-packages"], check=True)
@@ -177,69 +205,6 @@ def install_subfinder():
         print("[✗] Skipping subfinder installation.")
         return
 
-def install_findomain():
-    print(f"\n[!] Findomain is missing.")
-    user_choice = input("[?] Do you want to install Findomain? (yes/no): ").strip().lower()
-
-    if user_choice == "yes":
-        try:
-            # Install dependencies
-            print("[✓] Installing dependencies...")
-            subprocess.run(["sudo", "apt", "update"], check=True)
-            subprocess.run(["sudo", "apt", "install", "-y", "git", "curl", "build-essential"], check=True)
-            print("[✓] Dependencies installed.")
-
-            # Install Rust (if not already installed)
-            print("[✓] Checking for Rust installation...")
-            rust_check = subprocess.run(["which", "rustc"], capture_output=True, text=True)
-
-            if rust_check.returncode != 0:  # Rust is not installed
-                print("Rust not found, installing Rust...")
-                subprocess.run("curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh", shell=True, check=True)
-
-                # Ensure Cargo is in the PATH by adding it to ~/.zshrc
-                with open(os.path.expanduser("~/.zshrc"), "a") as file:
-                    file.write('\n# Adding Cargo to PATH\n')
-                    file.write('. "$HOME/.cargo/env"\n')
-                print("[✓] Rust installed successfully.")
-                print("[✓] Cargo added to ~/.zshrc.")
-                
-                # Apply the changes immediately by sourcing the ~/.zshrc file
-                subprocess.run("source ~/.zshrc", shell=True, check=True)
-                
-            else:
-                print("[✓] Rust is already installed.")
-
-            # Change to Desktop directory
-            desktop_path = os.path.expanduser("~/Desktop")
-            os.chdir(desktop_path)
-            print(f"[✓] Changed directory to {os.getcwd()}")
-
-            # Clone the Findomain repository
-            print("[✓] Cloning Findomain repository...")
-            subprocess.run(["git", "clone", "https://github.com/findomain/findomain.git"], check=True)
-
-            # Navigate to the Findomain directory
-            os.chdir("findomain")
-            print(f"[✓] Changed directory to {os.getcwd()}")
-
-            # Build Findomain - Update subprocess call to use shell=True
-            print("[✓] Building Findomain...")
-            subprocess.run("cargo build --release", shell=True, check=True)
-
-            # Copy the binary to /usr/bin
-            print("[✓] Copying Findomain binary to /usr/bin...")
-            subprocess.run(["sudo", "cp", "target/release/findomain", "/usr/bin/"], check=True)
-            print("[✓] Findomain installation completed successfully!")
-
-        except subprocess.CalledProcessError as e:
-            print(f"[✗] Error installing Findomain: {e}")
-    else:
-        print("[✗] Skipping Findomain installation.")
-        return
-
-# Check each tool and print its status
-missing_tools = []
 
 for tool in required_tools:
     tool_path = check_tool_availability(tool)
@@ -274,31 +239,6 @@ def install_httpx():
     else:
         print("[✗] Skipping httpx installation.")
         return
-
-# If Go is missing, ask user before installing
-if "go" in missing_tools:
-    install_go()
-    missing_tools.remove("go")  # Remove from missing tools list after installation
-
-if "sublist3r" in missing_tools:
-    install_sublist3r()
-    missing_tools.remove("sublist3r") 
-
-if "assetfinder" in missing_tools:
-    install_assetfinder()
-    missing_tools.remove("assetfinder")
-
-if "subfinder" in missing_tools:
-    install_subfinder()
-    missing_tools.remove("subfinder")
-
-if "findomain" in missing_tools:
-    install_findomain()
-    missing_tools.remove("findomain")
-
-if "httpx" in missing_tools:
-    install_httpx()
-    missing_tools.remove("httpx")
 
 # Function to check live subdomains using httpx
 def filter_httpx(subdomains, output_file):
@@ -338,7 +278,7 @@ def filter_httpx(subdomains, output_file):
 
 # Function to create directory for the target domain
 def create_directory(domain):
-    """Create a directory for the domain (e.g., 'nyc_scan')"""
+    """Create a directory for the domain"""
     directory = f"{domain}_scan"
     if not os.path.exists(directory):
         os.makedirs(directory)
@@ -364,22 +304,6 @@ def run_subdomain_discovery(domain, tools):
 
     return all_subdomains
 
-# Function to load existing subdomains from a .txt file
-def load_existing_subdomains_from_txt(file_path):
-    """Load existing subdomains from a .txt file."""
-    existing_subdomains = set()
-
-    try:
-        with open(file_path, 'r') as f:
-            existing_subdomains = set(f.read().splitlines())
-        print(f"[✓] Loaded {len(existing_subdomains)} existing subdomains from {file_path}")
-    except FileNotFoundError:
-        print(f"[✗] File {file_path} not found. Starting with an empty list.")
-    except Exception as e:
-        print(f"[✗] Error loading subdomains from file: {e}")
-
-    return existing_subdomains
-
 # Run a specific tool for subdomain discovery
 def run_tool(tool, domain):
     """Run an individual subdomain discovery tool."""
@@ -399,6 +323,22 @@ def run_tool(tool, domain):
         return set()
 
     return set(result.stdout.strip().splitlines())
+
+# Function to load existing subdomains from a .txt file
+def load_existing_subdomains_from_txt(file_path):
+    """Load existing subdomains from a .txt file."""
+    existing_subdomains = set()
+
+    try:
+        with open(file_path, 'r') as f:
+            existing_subdomains = set(f.read().splitlines())
+        print(f"[✓] Loaded {len(existing_subdomains)} existing subdomains from {file_path}")
+    except FileNotFoundError:
+        print(f"[✗] File {file_path} not found. Starting with an empty list.")
+    except Exception as e:
+        print(f"[✗] Error loading subdomains from file: {e}")
+
+    return existing_subdomains
 
 # Function to save all discovered subdomains to a file
 def save_subdomains_to_txt(live_subdomains, file_path):

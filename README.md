@@ -11,7 +11,7 @@ This tool is designed to manage subdomains discovered from a file, store them in
 |  Subdomain Enumeration | ---> |   Detection Tool  | --->   |     Database Check     |  ---> |     New Subdomain?    |
 +------------------------+       +-------------------+       +------------------------+       +-----------------------+
                                                                          | Yes
-                                                                         +v
+                                                                         v
                                                            +-------------------------------+
                                                            |  Send Notification to Discord |
                                                            +-------------------------------+

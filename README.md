@@ -8,7 +8,7 @@ This tool is designed to monitor the targets of your bug bounty programs, For ex
 
 ```
 +------------------------+       +-------------------+       +------------------------+   no    +-----------------------+
-|  Subdomain Enumeration | ---> |   Detection Tool  |  <---> |     Database Check     |  --->   |     No Notification   |
+|  Subdomain Enumeration | ---> |   Detection Tool   | <---> |     Database Check     |  --->   |     No Notification   |
 +------------------------+       +-------------------+       +------------------------+         +-----------------------+
                                                                          |
                                                            New SubDomain | Yes?

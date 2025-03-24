@@ -285,7 +285,7 @@ def create_directory(domain):
     return directory
 
 # Load program configuration from JSON file
-def load_program_config(config_path='/fullpath/programs_config.json'):
+def load_program_config(config_path='/home/kali/Desktop/detective/programs_config.json'):
     """Load configuration from programs_config.json."""
     with open(config_path, 'r') as f:
         return json.load(f)["programs"]
@@ -314,8 +314,6 @@ def run_tool(tool, domain):
         command = ["assetfinder", "--subs-only", domain]
     elif tool == "sublist3r":
         command = ["sublist3r", "-d", domain, "-o", "/dev/stdout"]
-    elif tool == "findomain":
-        command = ["findomain", "-t", domain]
     
     result = subprocess.run(command, capture_output=True, text=True)
     if result.returncode != 0:
@@ -352,20 +350,20 @@ def save_subdomains_to_txt(live_subdomains, file_path):
         print(f"[✗] Error saving live subdomains to file: {e}")
 
 # Function to send bulk notification using Project Discovery's notify
-def send_notify_notification(discord_webhook, file_path):
+def send_notify_notification(discord_webhook, file_path, domain):
     """Send bulk notification using the 'notify' tool from Project Discovery."""
     try:
         # Assuming 'discord.yaml' is correctly configured and exists
         result = subprocess.run(
-            ["notify", "-provider-config", "/full-path/discord.yaml", "-data", file_path, "-bulk"], 
+            ["notify", "-provider-config", "/home/kali/Desktop/detective/discord.yaml", "-id", domain, "-data", file_path, "-bulk"], 
             capture_output=True, text=True
         )
         if result.returncode == 0:
-            print("[✓] Notification sent successfully!")
+            print(f"[✓] Notification sent successfully for {domain}!")
         else:
-            print(f"[✗] Error sending notification: {result.stderr}")
+            print(f"[✗] Error sending notification for {domain}: {result.stderr}")
     except Exception as e:
-        print(f"[✗] Failed to execute 'notify' command: {e}")
+        print(f"[✗] Failed to execute 'notify' command for {domain}: {e}")
 
 # Main function to run the tool for each program
 def main():
@@ -388,7 +386,7 @@ def main():
         subdomains_txt_file_path = os.path.join(directory, "databases.txt")
 
         # Run subdomain discovery tools
-        tools = program.get("tools", ["subfinder", "assetfinder", "sublist3r", "findomain"])
+        tools = program.get("tools", ["subfinder", "assetfinder", "sublist3r"])
         print(f"[*] Discovering subdomains for {domain}...")
         subdomains = run_subdomain_discovery(domain, tools)
 
@@ -421,7 +419,7 @@ def main():
                         f.write(subdomain + "\n")
                 
                 # Send notification with the new live subdomains file
-                send_notify_notification(discord_webhook, temp_file)
+                send_notify_notification(discord_webhook, temp_file, domain)
                 
                 # Clean up the temporary file after sending the notification
                 os.remove(temp_file)

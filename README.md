@@ -3,7 +3,7 @@
 ![image](https://github.com/user-attachments/assets/baa2e5ec-18f1-4d6c-859b-56208836dc05)
 
 ## Overview:
-This tool is designed to monitor your domains. For example, it will alert you if new domains appear. It does this by running scans on the domains you specify, comparing them with those stored in the database. If a new domain is found, it will notify you and send you an alert.
+This tool is designed to monitor the targets of your bug bounty programs, For example, it will alert you if new domains appear. It does this by running scans on the domains you specify, comparing them with those stored in the database. If a new domain is found, it will notify you and send you an alert.
 
 
 ```

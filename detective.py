@@ -285,7 +285,7 @@ def create_directory(domain):
     return directory
 
 # Load program configuration from JSON file
-def load_program_config(config_path='programs_config.json'):
+def load_program_config(config_path='/fullpath/programs_config.json'):
     """Load configuration from programs_config.json."""
     with open(config_path, 'r') as f:
         return json.load(f)["programs"]
@@ -357,7 +357,7 @@ def send_notify_notification(discord_webhook, file_path):
     try:
         # Assuming 'discord.yaml' is correctly configured and exists
         result = subprocess.run(
-            ["notify", "-provider-config", "discord.yaml", "-data", file_path, "-bulk"], 
+            ["notify", "-provider-config", "/full-path/discord.yaml", "-data", file_path, "-bulk"], 
             capture_output=True, text=True
         )
         if result.returncode == 0:

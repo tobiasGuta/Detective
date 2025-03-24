@@ -7,10 +7,10 @@ This tool is designed to monitor the targets of your bug bounty programs, For ex
 
 
 ```
-+------------------------+       +-------------------+       +------------------------+       +-----------------------+
-|  Subdomain Enumeration | ---> |   Detection Tool  | --->   |     Database Check     |  ---> |     New Subdomain?    |
-+------------------------+       +-------------------+       +------------------------+       +-----------------------+
-                                                                         | Yes
++------------------------+       +-------------------+       +------------------------+   no    +-----------------------+
+|  Subdomain Enumeration | ---> |   Detection Tool  | --->   |     Database Check     |  --->   |     No Notification   |
++------------------------+       +-------------------+       +------------------------+         +-----------------------+
+                                                              New Domain | Yes?
                                                                          v
                                                            +-------------------------------+
                                                            |  Send Notification to Discord |

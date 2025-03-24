@@ -22,3 +22,12 @@ This tool is designed to manage subdomains discovered from a file, store them in
                                                               +--------------------------+
 
 ```
+# Running the Script Automatically with a Cron Job
+To have the script run automatically at scheduled intervals, you can set up a cron job. This is ideal for running the script regularly without manual intervention.
+
+Edit the crontab file:
+
+Open the crontab configuration by running the following command:
+```bash
+*/30 * * * * PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/local/go/bin:/home/user/go/bin /usr/bin/python3 /home/user/Desktop/Detective/detective.py > /home/user/Desktop/Detective/cron_output.log 2>&1
+```

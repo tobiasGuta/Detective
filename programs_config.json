@@ -1,0 +1,10 @@
+{
+  "programs": [
+    {
+      "domain": "nyc.gov",
+      "subdomains_file": "subdomains.txt",
+      "subdomains_txt_file": "databases.txt",
+      "discord_webhook": "https://discord.com/api/webhooks/xxxx"
+    }
+  ]
+}

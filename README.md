@@ -120,6 +120,13 @@ To receive the messages in Discord, you need to create a webhook for your Discor
 
 Go to your Discord server and navigate to the channel settings.
 
+# Example
+
+Program : nyc.gov
+
+![Screenshot 2025-04-26 073918](https://github.com/user-attachments/assets/13b4eb10-e170-4c0b-92cc-d8f222985fba)
+
+
 Under the Integrations tab, create a Webhook.
 
 Copy the Webhook URL and replace https://discord.com/api/webhooks/xxxxx with your actual webhook URL in the cron job command.

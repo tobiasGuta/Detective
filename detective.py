@@ -1,73 +1,43 @@
 import os
 import subprocess
 import json
+import requests
 from concurrent.futures import ThreadPoolExecutor
 
 # List of required tools
-required_tools = ["go", "subfinder", "assetfinder", "sublist3r", "httpx"]
+required_tools = ["go", "subfinder", "assetfinder", "sublist3r", "httpx", "gowitness"]
 
-# Check each tool and print its status
 missing_tools = []
-
-# If Go is missing, ask user before installing
-if "go" in missing_tools:
-    install_go()
-    missing_tools.remove("go") 
-
-if "sublist3r" in missing_tools:
-    install_sublist3r()
-    missing_tools.remove("sublist3r") 
-
-if "assetfinder" in missing_tools:
-    install_assetfinder()
-    missing_tools.remove("assetfinder")
-
-if "subfinder" in missing_tools:
-    install_subfinder()
-    missing_tools.remove("subfinder")
-
-if "httpx" in missing_tools:
-    install_httpx()
-    missing_tools.remove("httpx")
-
-art = """
-                                     @@@@@@@                               
-                                   @@       @                              
-                                 @         @@@                             
-                             @@@@@     @@@  @@                             
-                            @@    @@@@@@@@@@                               
-                         @@@@@@@@@@@@       @  @@                          
-                             @@@@    @@@     @@  @                         
-                           @@ @ @@@   @@  @@     @                         
-              @@@@@      @@   @@    @@@ @@       @                         
-             @@  @@@    @@      @@@@    @        @                         
-             @@    @@@ @@                @      @@                         
-             @@@ @@ @@@ @       @@@@     @      @@                         
-              @@@   @@@  @@@@@@ @@@      @@     @                          
-               @@@@  @@         @ @@      @@    @                          
-                 @@@@@          @  @@@  @@@@    @@@@@                      
-                      @@        @       @@    @@@@@ @                      
-                      @@@        @@     @@     @@@ @@ @@                   
-                       @@@@@@      @@@@@@@      @    @@  @@                
-                      @  @  @@@@@@     @    @@@@@ @@@ @@@                  
-                        @@@@@ @  @   @@ @@@@    @@    @@                   
-                          @@@@     @@  @   @        @@                     
-                                       @  @@@@@@  @@@@                     
-                               @@@     @ @@@    @@@ @@@                    
-                               @@@@     @@@          @@@@                  
-                                 @@@@@ @@@            @@@@                 
-                                  @@@@@@@@              @@@@               
-                                    @@@@@@      @@@@@@@@@@@@@@             
-"""
-
-print(art)
-
-# Install tools
 
 # Function to check if a tool is installed
 def check_tool_availability(tool):
     result = subprocess.run(["which", tool], capture_output=True, text=True)
     return result.stdout.strip() if result.returncode == 0 else None
+
+# Install functions (I'll leave these short, assume you already have the longer versions in your project)
+def install_go():
+    # Install Go if needed
+    pass
+
+def install_sublist3r():
+    # Install sublist3r if needed
+    pass
+
+def install_assetfinder():
+    # Install assetfinder if needed
+    pass
+
+def install_subfinder():
+    # Install subfinder if needed
+    pass
+
+def install_httpx():
+    # Install httpx if needed
+    pass
+
+def install_gowitness():
+    # Install gowitness if needed
+    pass
 
 # Function to install Go if missing
 def install_go():
@@ -205,24 +175,6 @@ def install_subfinder():
         print("[✗] Skipping subfinder installation.")
         return
 
-
-for tool in required_tools:
-    tool_path = check_tool_availability(tool)
-    if tool_path:
-        print(f"[✓] {tool} is installed at {tool_path}.")
-        
-        # Check if httpx is specifically in /usr/bin/httpx and remove it using sudo
-        if tool == "httpx" and tool_path == "/usr/bin/httpx":
-            print("[!] Removing httpx from /usr/bin/httpx with sudo...")
-            try:
-                subprocess.run(["sudo", "rm", "-f", "/usr/bin/httpx"], check=True)
-                print("[✓] httpx has been removed.")
-            except subprocess.CalledProcessError as e:
-                print(f"[✗] Failed to remove httpx: {e}")
-    else:
-        print(f"[✗] {tool} is missing.")
-        missing_tools.append(tool)
-
 def install_httpx():
     print(f"\n[!] httpx is missing.")
     user_choice = input("[?] Do you want to install httpx using Go? (yes/no): ").strip().lower()
@@ -240,43 +192,83 @@ def install_httpx():
         print("[✗] Skipping httpx installation.")
         return
 
-# Function to check live subdomains using httpx
-def filter_httpx(subdomains, output_file):
-    """Check live subdomains with httpx and store only URLs in the database."""
+def install_gowitness():
+    print(f"\n[!] gowitness is missing.")
+    user_choice = input("[?] Do you want to install gowitness using Go? (yes/no): ").strip().lower()
+
+    if user_choice == "yes":
+        try:
+            print("[!] Installing gowitness...")
+            subprocess.run(["go", "install", "github.com/sensepost/gowitness@latest"], check=True)
+            print("[✓] gowitness installed successfully!")
+        except subprocess.CalledProcessError as e:
+            print(f"[✗] Error installing gowitness: {e}")
+    else:
+        print("[✗] Skipping gowitness installation.")
+
+
+# Screenshot and Discord functions
+def clean_screenshot_folder():
+    """Delete all files inside screenshots/ directory at script startup."""
+    screenshot_folder = "screenshots"
+    if os.path.exists(screenshot_folder):
+        for file in os.listdir(screenshot_folder):
+            file_path = os.path.join(screenshot_folder, file)
+            if os.path.isfile(file_path):
+                os.remove(file_path)
+        print("[*] Cleaned old screenshots at startup.")
+
+def take_screenshot(subdomain):
+    """Take screenshot of a live subdomain using gowitness v3."""
     try:
-        temp_file_path = "temp_subdomains.txt"
-        # Save subdomains to temporary file
-        with open(temp_file_path, "w") as f:
-            f.write("\n".join(subdomains))
-        
-        # Run httpx to check live subdomains
-        httpx_command = [
-            "httpx", "-silent", "-l", temp_file_path
-        ]
-        httpx_result = subprocess.run(httpx_command, capture_output=True, text=True)
+        output_dir = "screenshots"
+        if not os.path.exists(output_dir):
+            os.makedirs(output_dir)
 
-        if httpx_result.returncode != 0:
-            print(f"[✗] httpx error: {httpx_result.stderr}")
-            return set()
+        url = subdomain if subdomain.startswith("http") else f"https://{subdomain}"
 
-        live_subdomains = set(httpx_result.stdout.strip().splitlines())
+        # New gowitness v3 syntax - piping url into stdin
+        command = f"echo '{url}' | gowitness scan file -f - --screenshot-path {output_dir} --screenshot-format png"
+        subprocess.run(command, shell=True, check=True)
 
-        # Save live URLs only (remove extra data like status codes, headers, etc.)
-        with open(output_file, "w") as f:
-            f.write("\n".join(live_subdomains))
-
-        return live_subdomains
+        # Look for screenshots with either .png or .jpeg
+        image_files = [f for f in os.listdir(output_dir) if f.endswith('.png') or f.endswith('.jpeg')]
+        if image_files:
+            image_files.sort(key=lambda x: os.path.getmtime(os.path.join(output_dir, x)))
+            screenshot_path = os.path.join(output_dir, image_files[-1])
+            return screenshot_path
+        else:
+            return None
 
     except Exception as e:
-        print(f"[✗] Error in filtering live subdomains: {e}")
-        return set()
+        print(f"[✗] Failed to take screenshot of {subdomain}: {e}")
+        return None
 
-    finally:
-        # Clean up the temporary file
-        if os.path.exists(temp_file_path):
-            os.remove(temp_file_path)
+def send_subdomain_with_screenshot_to_discord(webhook_url, domain, subdomain, screenshot_path):
+    """Send new live subdomain with its screenshot to Discord webhook."""
+    try:
+        with open(screenshot_path, 'rb') as f:
+            files = {
+                'file': (os.path.basename(screenshot_path), f)
+            }
+            data = {
+                "content": f"**Program:** `{domain}`\n{subdomain}"
+            }
+            response = requests.post(webhook_url, data=data, files=files)
 
-# Function to create directory for the target domain
+        if response.status_code == 204:
+            print(f"[✓] Sent {subdomain} with screenshot successfully to Discord.")
+
+            os.remove(screenshot_path)
+            print(f"[✓] Deleted screenshot {screenshot_path} to save space.")
+
+        else:
+            print(f"[✗] Failed to send {subdomain} with screenshot. Status code: {response.status_code}, response: {response.text}")
+
+    except Exception as e:
+        print(f"[✗] Exception while sending {subdomain} with screenshot: {e}")
+
+# Other utility functions
 def create_directory(domain):
     """Create a directory for the domain"""
     directory = f"{domain}_scan"
@@ -284,27 +276,11 @@ def create_directory(domain):
         os.makedirs(directory)
     return directory
 
-# Load program configuration from JSON file
-def load_program_config(config_path='/home/kali/Desktop/detective/programs_config.json'):
+def load_program_config(config_path='/home/bigbrooklyn/Desktop/project/programs_config.json'):
     """Load configuration from programs_config.json."""
     with open(config_path, 'r') as f:
         return json.load(f)["programs"]
 
-# Run subdomain discovery tools in parallel
-def run_subdomain_discovery(domain, tools):
-    """Run subdomain discovery tools and return the discovered subdomains."""
-    all_subdomains = set()
-
-    with ThreadPoolExecutor() as executor:
-        results = executor.map(lambda tool: run_tool(tool, domain), tools)
-
-    for result in results:
-        if result:
-            all_subdomains.update(result)
-
-    return all_subdomains
-
-# Run a specific tool for subdomain discovery
 def run_tool(tool, domain):
     """Run an individual subdomain discovery tool."""
     print(f"[+] Running {tool}...")
@@ -314,7 +290,7 @@ def run_tool(tool, domain):
         command = ["assetfinder", "--subs-only", domain]
     elif tool == "sublist3r":
         command = ["sublist3r", "-d", domain, "-o", "/dev/stdout"]
-    
+
     result = subprocess.run(command, capture_output=True, text=True)
     if result.returncode != 0:
         print(f"[✗] Error running {tool}: {result.stderr}")
@@ -322,11 +298,50 @@ def run_tool(tool, domain):
 
     return set(result.stdout.strip().splitlines())
 
-# Function to load existing subdomains from a .txt file
+def run_subdomain_discovery(domain, tools):
+    """Run subdomain discovery tools and return discovered subdomains."""
+    all_subdomains = set()
+    with ThreadPoolExecutor() as executor:
+        results = executor.map(lambda tool: run_tool(tool, domain), tools)
+
+    for result in results:
+        if result:
+            all_subdomains.update(result)
+
+    return all_subdomains
+
+def filter_httpx(subdomains, output_file):
+    """Check live subdomains with httpx and save."""
+    try:
+        temp_file_path = "temp_subdomains.txt"
+        with open(temp_file_path, "w") as f:
+            f.write("\n".join(subdomains))
+        
+        httpx_command = ["httpx", "-silent", "-l", temp_file_path]
+        httpx_result = subprocess.run(httpx_command, capture_output=True, text=True)
+
+        if httpx_result.returncode != 0:
+            print(f"[✗] httpx error: {httpx_result.stderr}")
+            return set()
+
+        live_subdomains = set(httpx_result.stdout.strip().splitlines())
+
+        with open(output_file, "w") as f:
+            f.write("\n".join(live_subdomains))
+
+        return live_subdomains
+
+    except Exception as e:
+        print(f"[✗] Error filtering live subdomains: {e}")
+        return set()
+
+    finally:
+        if os.path.exists(temp_file_path):
+            os.remove(temp_file_path)
+
 def load_existing_subdomains_from_txt(file_path):
     """Load existing subdomains from a .txt file."""
     existing_subdomains = set()
-
     try:
         with open(file_path, 'r') as f:
             existing_subdomains = set(f.read().splitlines())
@@ -338,40 +353,55 @@ def load_existing_subdomains_from_txt(file_path):
 
     return existing_subdomains
 
-# Function to save all discovered subdomains to a file
-def save_subdomains_to_txt(live_subdomains, file_path):
-    """Save live subdomains to a .txt file."""
+def save_subdomains_to_txt(subdomains, file_path):
+    """Save subdomains to a file."""
     try:
         with open(file_path, 'a') as f:
-            for subdomain in live_subdomains:
+            for subdomain in subdomains:
                 f.write(subdomain + "\n")
-        print(f"[✓] Live subdomains saved to {file_path}")
+        print(f"[✓] Subdomains saved to {file_path}")
     except Exception as e:
-        print(f"[✗] Error saving live subdomains to file: {e}")
+        print(f"[✗] Error saving subdomains: {e}")
 
-# Function to send bulk notification using Project Discovery's notify
-def send_notify_notification(discord_webhook, file_path, domain):
-    """Send bulk notification using the 'notify' tool from Project Discovery."""
-    try:
-        # Assuming 'discord.yaml' is correctly configured and exists
-        result = subprocess.run(
-            ["notify", "-provider-config", "/home/kali/Desktop/detective/discord.yaml", "-id", domain, "-data", file_path, "-bulk"], 
-            capture_output=True, text=True
-        )
-        if result.returncode == 0:
-            print(f"[✓] Notification sent successfully for {domain}!")
-        else:
-            print(f"[✗] Error sending notification for {domain}: {result.stderr}")
-    except Exception as e:
-        print(f"[✗] Failed to execute 'notify' command for {domain}: {e}")
-
-# Main function to run the tool for each program
+# MAIN Function
 def main():
+    clean_screenshot_folder()
+    
+    # Check if tools are installed
+    for tool in required_tools:
+        tool_path = check_tool_availability(tool)
+        if tool_path:
+            print(f"[✓] {tool} is installed at {tool_path}.")
+        else:
+            print(f"[✗] {tool} is missing.")
+            missing_tools.append(tool)
 
     if missing_tools:
         print(f"\n[!] Missing tools: {', '.join(missing_tools)}")
+        for tool in missing_tools:
+            user_choice = input(f"[?] {tool} is missing. Do you want to install {tool}? (yes/no): ").strip().lower()
+            if user_choice == "yes":
+                if tool == "go":
+                    install_go()
+                elif tool == "subfinder":
+                    install_subfinder()
+                elif tool == "assetfinder":
+                    install_assetfinder()
+                elif tool == "sublist3r":
+                    install_sublist3r()
+                elif tool == "httpx":
+                    install_httpx()
+                elif tool == "gowitness":
+                    install_gowitness()
+                else:
+                    print(f"[✗] No installer function available for {tool}.")
+            else:
+                print(f"[!] Skipping installation for {tool}.")
+
+        print("\n[*] Installation step finished. Please re-run the script to continue.")
+        exit(0)
     else:
-        print("\n[✓] All required tools are installed.")
+        print("\n[✓] All required tools are installed. Continuing...\n")
 
     programs = load_program_config()
 
@@ -379,52 +409,43 @@ def main():
         domain = program["domain"]
         discord_webhook = program["discord_webhook"]
 
-        # Create directory for each domain (e.g., 'nyc_scan')
         directory = create_directory(domain)
 
         subdomains_file_path = os.path.join(directory, "subdomains.txt")
         subdomains_txt_file_path = os.path.join(directory, "databases.txt")
 
-        # Run subdomain discovery tools
+        # Discover subdomains
         tools = program.get("tools", ["subfinder", "assetfinder", "sublist3r"])
         print(f"[*] Discovering subdomains for {domain}...")
         subdomains = run_subdomain_discovery(domain, tools)
 
-        # Save discovered subdomains to file
         save_subdomains_to_txt(subdomains, subdomains_file_path)
 
-        # Check for live subdomains
+        # Filter live subdomains
         print(f"[*] Checking live subdomains for {domain}...")
         live_subdomains = filter_httpx(subdomains, os.path.join(directory, "live_subdomains.txt"))
 
-        # Load existing subdomains from the .txt file
+        # Load existing subdomains database
         existing_subdomains = load_existing_subdomains_from_txt(subdomains_txt_file_path)
 
-        # Filter out already existing subdomains
+        # Find only new ones
         new_live_subdomains = [subdomain for subdomain in live_subdomains if subdomain not in existing_subdomains]
 
-        # Debugging: Print the new live subdomains
         print(f"[DEBUG] New live subdomains: {new_live_subdomains}")
 
-        # Save new live subdomains to the .txt file if any
         if new_live_subdomains:
             save_subdomains_to_txt(new_live_subdomains, subdomains_txt_file_path)
 
-            # Send notification with new live subdomains
-            
-            if new_live_subdomains:
-                temp_file = "new_live_subdomains.txt"
-                with open(temp_file, 'w') as f:
-                    for subdomain in new_live_subdomains:
-                        f.write(subdomain + "\n")
-                
-                # Send notification with the new live subdomains file
-                send_notify_notification(discord_webhook, temp_file, domain)
-                
-                # Clean up the temporary file after sending the notification
-                os.remove(temp_file)
+            for subdomain in new_live_subdomains:
+                print(f"[*] Taking screenshot of {subdomain}...")
+                screenshot_path = take_screenshot(subdomain)
+                if screenshot_path:
+                    print(f"[*] Sending {subdomain} with screenshot to Discord...")
+                    send_subdomain_with_screenshot_to_discord(discord_webhook, domain, subdomain, screenshot_path)
+                else:
+                    print(f"[✗] Failed to screenshot {subdomain}, skipping sending.")
 
-            print(f"[✓] New live subdomains saved and notification sent.")
+            print(f"[✓] All new live subdomains processed and sent with screenshots.")
         else:
             print("[✓] No new live subdomains, skipping notification.")
 

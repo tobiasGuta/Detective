@@ -276,7 +276,7 @@ def create_directory(domain):
         os.makedirs(directory)
     return directory
 
-def load_program_config(config_path='/changeme/programs_config.json'):
+def load_program_config(config_path='/config/programs_config.json'):
     """Load configuration from programs_config.json."""
     with open(config_path, 'r') as f:
         return json.load(f)["programs"]

@@ -5,7 +5,7 @@ import requests
 from concurrent.futures import ThreadPoolExecutor
 
 # List of required tools
-required_tools = ["go", "subfinder", "assetfinder", "sublist3r", "httpx", "gowitness"]
+required_tools = ["go", "subfinder", "assetfinder", "httpx", "gowitness"]
 
 missing_tools = []
 
@@ -276,7 +276,7 @@ def create_directory(domain):
         os.makedirs(directory)
     return directory
 
-def load_program_config(config_path='/home/bigbrooklyn/Desktop/project/programs_config.json'):
+def load_program_config(config_path='/changeme/programs_config.json'):
     """Load configuration from programs_config.json."""
     with open(config_path, 'r') as f:
         return json.load(f)["programs"]
@@ -288,8 +288,9 @@ def run_tool(tool, domain):
         command = ["subfinder", "-silent", "-d", domain]
     elif tool == "assetfinder":
         command = ["assetfinder", "--subs-only", domain]
-    elif tool == "sublist3r":
-        command = ["sublist3r", "-d", domain, "-o", "/dev/stdout"]
+    else:
+        print(f"[✗] Unknown tool: {tool}")
+        return set()
 
     result = subprocess.run(command, capture_output=True, text=True)
     if result.returncode != 0:
@@ -415,7 +416,7 @@ def main():
         subdomains_txt_file_path = os.path.join(directory, "databases.txt")
 
         # Discover subdomains
-        tools = program.get("tools", ["subfinder", "assetfinder", "sublist3r"])
+        tools = program.get("tools", ["subfinder", "assetfinder"])
         print(f"[*] Discovering subdomains for {domain}...")
         subdomains = run_subdomain_discovery(domain, tools)
 

@@ -1,6 +1,6 @@
 # Detective
 
-![image](https://github.com/user-attachments/assets/baa2e5ec-18f1-4d6c-859b-56208836dc05)
+![image](https://github.com/user-attachments/assets/9650e31a-5fec-49f6-b856-4276471bfe9b)
 
 ## Overview:
 This tool is designed to monitor the targets of your bug bounty programs, For example, it will alert you if new domains appear. It does this by running scans on the domains you specify, comparing them with those stored in the database. If a new domain is found, it will notify you and send you an alert.

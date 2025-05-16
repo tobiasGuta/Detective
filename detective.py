@@ -3,13 +3,13 @@ import subprocess
 import json
 import requests
 from concurrent.futures import ThreadPoolExecutor
+import re
 
 # List of required tools
-required_tools = ["go", "subfinder", "assetfinder", "httpx", "gowitness"]
+required_tools = ["go", "subfinder", "assetfinder", "httpx", "gowitness", "naabu"]
 
 missing_tools = []
 
-# Function to check if a tool is installed
 def check_tool_availability(tool):
     result = subprocess.run(["which", tool], capture_output=True, text=True)
     return result.stdout.strip() if result.returncode == 0 else None
@@ -84,6 +84,19 @@ def install_go():
     except Exception as e:
         print(f"[✗] Failed to install Go: {e}")
 
+def install_naabu():
+    print(f"\n[!] naabu is missing.")
+    user_choice = input("[?] Do you want to install naabu using Go? (yes/no): ").strip().lower()
+    if user_choice == "yes":
+        try:
+            print("[!] Installing naabu...")
+            subprocess.run(["go", "install", "github.com/projectdiscovery/naabu/v2/cmd/naabu@latest"], check=True)
+            print("[✓] naabu installed successfully!")
+        except subprocess.CalledProcessError as e:
+            print(f"[✗] Error installing naabu: {e}")
+    else:
+        print("[✗] Skipping naabu installation.")
+
 def install_sublist3r():
     print(f"\n[!] sublist3r is missing.")
     user_choice = input("[?] Do you want to install using git? (yes/no): ").strip().lower()
@@ -136,7 +149,7 @@ def install_sublist3r():
 
 def install_assetfinder():
     print(f"\n[!] assetfinder is missing.")
-    
+
     # Check if Go is installed
     try:
         subprocess.run(["go", "version"], check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -156,7 +169,7 @@ def install_assetfinder():
         subprocess.run(["go", "install", "github.com/tomnomnom/assetfinder@latest"], check=True)
         print("[✓] assetfinder installation completed successfully!")
     except subprocess.CalledProcessError as e:
-        print(f"[✗] Error installing assetfinder: {e}")  
+        print(f"[✗] Error installing assetfinder: {e}")
 
 def install_subfinder():
     print(f"\n[!] subfinder is missing.")
@@ -206,32 +219,24 @@ def install_gowitness():
     else:
         print("[✗] Skipping gowitness installation.")
 
-
-# Screenshot and Discord functions
 def clean_screenshot_folder():
-    """Delete all files inside screenshots/ directory at script startup."""
     screenshot_folder = "screenshots"
     if os.path.exists(screenshot_folder):
         for file in os.listdir(screenshot_folder):
             file_path = os.path.join(screenshot_folder, file)
             if os.path.isfile(file_path):
                 os.remove(file_path)
-        print("[*] Cleaned old screenshots at startup.")
 
 def take_screenshot(subdomain):
-    """Take screenshot of a live subdomain using gowitness v3."""
     try:
         output_dir = "screenshots"
         if not os.path.exists(output_dir):
             os.makedirs(output_dir)
 
         url = subdomain if subdomain.startswith("http") else f"https://{subdomain}"
-
-        # New gowitness v3 syntax - piping url into stdin
         command = f"echo '{url}' | gowitness scan file -f - --screenshot-path {output_dir} --screenshot-format png"
         subprocess.run(command, shell=True, check=True)
 
-        # Look for screenshots with either .png or .jpeg
         image_files = [f for f in os.listdir(output_dir) if f.endswith('.png') or f.endswith('.jpeg')]
         if image_files:
             image_files.sort(key=lambda x: os.path.getmtime(os.path.join(output_dir, x)))
@@ -239,135 +244,155 @@ def take_screenshot(subdomain):
             return screenshot_path
         else:
             return None
-
     except Exception as e:
-        print(f"[✗] Failed to take screenshot of {subdomain}: {e}")
+        print(f"[\u2717] Failed to take screenshot of {subdomain}: {e}")
         return None
 
-def send_subdomain_with_screenshot_to_discord(webhook_url, domain, subdomain, screenshot_path):
-    """Send new live subdomain with its screenshot to Discord webhook."""
+def send_subdomain_with_screenshot_to_discord(webhook_url, domain, subdomain, screenshot_path, tech_info="Unknown", ports="Unknown"):
     try:
         with open(screenshot_path, 'rb') as f:
             files = {
                 'file': (os.path.basename(screenshot_path), f)
             }
             data = {
-                "content": f"**Program:** `{domain}`\n{subdomain}"
+                "content": (
+                    f"**Program:** `{domain}`\n"
+                    f"**Subdomain:** {subdomain}\n"
+                    f"**Tech Stack:** `{tech_info}`\n"
+                    f"**Open Ports:** `{ports}`"
+                )
             }
             response = requests.post(webhook_url, data=data, files=files)
 
         if response.status_code == 204:
-            print(f"[✓] Sent {subdomain} with screenshot successfully to Discord.")
-
             os.remove(screenshot_path)
-            print(f"[✓] Deleted screenshot {screenshot_path} to save space.")
-
+            print(f"[✓] Sent {subdomain} to Discord and deleted screenshot.")
         else:
-            print(f"[✗] Failed to send {subdomain} with screenshot. Status code: {response.status_code}, response: {response.text}")
+            print(f"[✗] Failed to send {subdomain} to Discord. Status code: {response.status_code}, response: {response.text}")
 
     except Exception as e:
-        print(f"[✗] Exception while sending {subdomain} with screenshot: {e}")
+        print(f"[✗] Exception while sending {subdomain} to Discord: {e}")
 
-# Other utility functions
+
 def create_directory(domain):
-    """Create a directory for the domain"""
     directory = f"{domain}_scan"
     if not os.path.exists(directory):
         os.makedirs(directory)
     return directory
 
-def load_program_config(config_path='/config/programs_config.json'):
-    """Load configuration from programs_config.json."""
+def load_program_config(config_path='config/programs_config.json'):
     with open(config_path, 'r') as f:
         return json.load(f)["programs"]
 
 def run_tool(tool, domain):
-    """Run an individual subdomain discovery tool."""
-    print(f"[+] Running {tool}...")
     if tool == "subfinder":
         command = ["subfinder", "-silent", "-d", domain]
     elif tool == "assetfinder":
         command = ["assetfinder", "--subs-only", domain]
     else:
-        print(f"[✗] Unknown tool: {tool}")
         return set()
-
     result = subprocess.run(command, capture_output=True, text=True)
-    if result.returncode != 0:
-        print(f"[✗] Error running {tool}: {result.stderr}")
-        return set()
-
-    return set(result.stdout.strip().splitlines())
+    return set(result.stdout.strip().splitlines()) if result.returncode == 0 else set()
 
 def run_subdomain_discovery(domain, tools):
-    """Run subdomain discovery tools and return discovered subdomains."""
     all_subdomains = set()
     with ThreadPoolExecutor() as executor:
         results = executor.map(lambda tool: run_tool(tool, domain), tools)
-
     for result in results:
         if result:
             all_subdomains.update(result)
-
     return all_subdomains
 
 def filter_httpx(subdomains, output_file):
-    """Check live subdomains with httpx and save."""
+    tech_map = {}
     try:
         temp_file_path = "temp_subdomains.txt"
         with open(temp_file_path, "w") as f:
             f.write("\n".join(subdomains))
-        
-        httpx_command = ["httpx", "-silent", "-l", temp_file_path]
+
+        httpx_command = ["httpx", "-silent", "-l", temp_file_path, "-tech-detect", "-json"]
         httpx_result = subprocess.run(httpx_command, capture_output=True, text=True)
 
-        if httpx_result.returncode != 0:
-            print(f"[✗] httpx error: {httpx_result.stderr}")
-            return set()
-
-        live_subdomains = set(httpx_result.stdout.strip().splitlines())
+        live_subdomains = set()
+        for line in httpx_result.stdout.strip().splitlines():
+            try:
+                data = json.loads(line)
+                url = data.get("url")
+                tech = ", ".join(data.get("tech", [])) if data.get("tech") else "Unknown"
+                if url:
+                    live_subdomains.add(url)
+                    tech_map[url] = tech
+            except json.JSONDecodeError:
+                continue
 
         with open(output_file, "w") as f:
             f.write("\n".join(live_subdomains))
 
-        return live_subdomains
+        return live_subdomains, tech_map
+    finally:
+        if os.path.exists("temp_subdomains.txt"):
+            os.remove("temp_subdomains.txt")
+
+def scan_ports_with_naabu(subdomain):
+    try:
+        domain_only = subdomain.replace("http://", "").replace("https://", "").split("/")[0]
+
+        # Step 1: Run Naabu and collect ports
+        naabu_cmd = ["naabu", "-host", domain_only, "-ports", "top-1000", "-json"]
+        naabu_result = subprocess.run(naabu_cmd, capture_output=True, text=True)
+        if naabu_result.returncode != 0:
+            return "Naabu error"
+
+        ports = set()
+        for line in naabu_result.stdout.strip().splitlines():
+            try:
+                data = json.loads(line)
+                ports.add(str(data["port"]))
+            except json.JSONDecodeError:
+                continue
+
+        if not ports:
+            return "None"
+
+        # Step 2: Run Nmap for detailed service detection
+        port_list = ",".join(sorted(ports))
+        nmap_cmd = ["nmap", "-sV", "-p", port_list, domain_only]
+        nmap_result = subprocess.run(nmap_cmd, capture_output=True, text=True)
+        if nmap_result.returncode != 0:
+            return f"Ports: {port_list} (Nmap error)"
+
+        # Step 3: Extract results
+        service_info = []
+        for line in nmap_result.stdout.splitlines():
+            if "/tcp" in line and "open" in line:
+                parts = line.split()
+                port_proto = parts[0]
+                service = parts[2] if len(parts) > 2 else "unknown"
+                version = " ".join(parts[3:]) if len(parts) > 3 else "unknown"
+                service_info.append(f"{port_proto} → {service} ({version})")
+
+        return "\n".join(service_info) if service_info else f"Ports: {port_list} (No version info)"
 
     except Exception as e:
-        print(f"[✗] Error filtering live subdomains: {e}")
-        return set()
+        return f"Exception: {e}"
 
-    finally:
-        if os.path.exists(temp_file_path):
-            os.remove(temp_file_path)
+
 
 def load_existing_subdomains_from_txt(file_path):
-    """Load existing subdomains from a .txt file."""
-    existing_subdomains = set()
     try:
         with open(file_path, 'r') as f:
-            existing_subdomains = set(f.read().splitlines())
-        print(f"[✓] Loaded {len(existing_subdomains)} existing subdomains from {file_path}")
+            return set(f.read().splitlines())
     except FileNotFoundError:
-        print(f"[✗] File {file_path} not found. Starting with an empty list.")
-    except Exception as e:
-        print(f"[✗] Error loading subdomains from file: {e}")
-
-    return existing_subdomains
+        return set()
 
 def save_subdomains_to_txt(subdomains, file_path):
-    """Save subdomains to a file."""
-    try:
-        with open(file_path, 'a') as f:
-            for subdomain in subdomains:
-                f.write(subdomain + "\n")
-        print(f"[✓] Subdomains saved to {file_path}")
-    except Exception as e:
-        print(f"[✗] Error saving subdomains: {e}")
+    with open(file_path, 'a') as f:
+        for subdomain in subdomains:
+            f.write(subdomain + "\n")
 
-# MAIN Function
 def main():
     clean_screenshot_folder()
-    
+
     # Check if tools are installed
     for tool in required_tools:
         tool_path = check_tool_availability(tool)
@@ -394,6 +419,8 @@ def main():
                     install_httpx()
                 elif tool == "gowitness":
                     install_gowitness()
+                elif tool == "naabu":
+                    install_naabu()
                 else:
                     print(f"[✗] No installer function available for {tool}.")
             else:
@@ -422,9 +449,9 @@ def main():
 
         save_subdomains_to_txt(subdomains, subdomains_file_path)
 
-        # Filter live subdomains
+        # Filter live subdomains and extract tech
         print(f"[*] Checking live subdomains for {domain}...")
-        live_subdomains = filter_httpx(subdomains, os.path.join(directory, "live_subdomains.txt"))
+        live_subdomains, tech_map = filter_httpx(subdomains, os.path.join(directory, "live_subdomains.txt"))
 
         # Load existing subdomains database
         existing_subdomains = load_existing_subdomains_from_txt(subdomains_txt_file_path)
@@ -441,8 +468,19 @@ def main():
                 print(f"[*] Taking screenshot of {subdomain}...")
                 screenshot_path = take_screenshot(subdomain)
                 if screenshot_path:
-                    print(f"[*] Sending {subdomain} with screenshot to Discord...")
-                    send_subdomain_with_screenshot_to_discord(discord_webhook, domain, subdomain, screenshot_path)
+                    tech_info = tech_map.get(subdomain, "Unknown")
+                    print(f"[*] Scanning ports with Naabu for {subdomain}...")
+                    ports = scan_ports_with_naabu(subdomain)
+
+                    print(f"[*] Sending {subdomain} with screenshot, tech stack, and ports to Discord...")
+                    send_subdomain_with_screenshot_to_discord(
+                        webhook_url=discord_webhook,
+                        domain=domain,
+                        subdomain=subdomain,
+                        screenshot_path=screenshot_path,
+                        tech_info=tech_info,
+                        ports=ports
+                    )
                 else:
                     print(f"[✗] Failed to screenshot {subdomain}, skipping sending.")
 
